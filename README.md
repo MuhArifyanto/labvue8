@@ -1,4 +1,4 @@
-#  Praktikum Pemrograman Website 2 - VueJS Manual
+# VueJS 
 
 ##  Profil Mahasiswa
 
