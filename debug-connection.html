@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Debug Connection Tool</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .test-section {
+            margin: 25px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            color: #495057;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover { background: #0056b3; transform: translateY(-2px); }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; transform: none; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-unknown { background: #ffc107; }
+        .config-display {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #28a745);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Connection Tool</h1>
+        <p style="text-align: center; color: #6c757d; font-size: 1.1rem;">
+            Tool untuk debugging koneksi Vue.js ke API Backend
+        </p>
+
+        <!-- Status Overview -->
+        <div class="test-section">
+            <h3>📊 Status Overview</h3>
+            <div id="statusOverview">
+                <p><span class="status-indicator status-unknown"></span> Belum ada test yang dijalankan</p>
+            </div>
+        </div>
+
+        <!-- Configuration Display -->
+        <div class="test-section">
+            <h3>⚙️ Current Configuration</h3>
+            <div class="config-display" id="configDisplay">
+                Loading configuration...
+            </div>
+        </div>
+
+        <!-- Test 1: Server Connection -->
+        <div class="test-section">
+            <h3>🌐 Test 1: Server Connection</h3>
+            <p>Test apakah server web berjalan di localhost:8080</p>
+            <button class="btn" onclick="testServerConnection()">Test Server Connection</button>
+            <div id="serverResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 2: API Endpoint -->
+        <div class="test-section">
+            <h3>🔗 Test 2: API Endpoint</h3>
+            <p>Test apakah endpoint API dapat diakses</p>
+            <button class="btn" onclick="testAPIEndpoint()">Test API Endpoint</button>
+            <div id="apiResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 3: CORS -->
+        <div class="test-section">
+            <h3>🔒 Test 3: CORS Configuration</h3>
+            <p>Test apakah CORS dikonfigurasi dengan benar</p>
+            <button class="btn" onclick="testCORS()">Test CORS</button>
+            <div id="corsResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: POST Data -->
+        <div class="test-section">
+            <h3>📤 Test 4: POST Data</h3>
+            <p>Test mengirim data artikel ke API</p>
+            <button class="btn" onclick="testPOSTData()">Test POST Data</button>
+            <div id="postResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 5: Simple API -->
+        <div class="test-section">
+            <h3>🔄 Test 5: Simple API Fallback</h3>
+            <p>Test API sederhana sebagai fallback</p>
+            <button class="btn" onclick="testSimpleAPI()">Test Simple API</button>
+            <div id="simpleApiResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="test-section">
+            <h3>📈 Test Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <p id="progressText">0/5 tests completed</p>
+        </div>
+
+        <!-- Solutions -->
+        <div class="test-section">
+            <h3>💡 Recommended Solutions</h3>
+            <div id="solutions">
+                <p>Jalankan test untuk mendapatkan rekomendasi solusi...</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="test-section">
+            <h3>⚡ Quick Actions</h3>
+            <button class="btn btn-success" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="btn btn-warning" onclick="openVueApp()">📱 Open Vue.js App</button>
+            <button class="btn btn-warning" onclick="openSimpleTest()">🧪 Open Simple Test</button>
+            <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            baseUrl: 'http://localhost:8080',
+            endpoints: {
+                artikel: '/admin/artikel/api',
+                simple: '/test-api-simple.php'
+            },
+            timeout: 5000
+        };
+
+        let testResults = {
+            server: null,
+            api: null,
+            cors: null,
+            post: null,
+            simple: null
+        };
+
+        // Display configuration
+        function displayConfig() {
+            document.getElementById('configDisplay').innerHTML = `
+Base URL: ${CONFIG.baseUrl}
+CodeIgniter Endpoint: ${CONFIG.endpoints.artikel}
+Simple API Endpoint: ${CONFIG.endpoints.simple}
+Timeout: ${CONFIG.timeout}ms
+            `;
+        }
+
+        // Update progress
+        function updateProgress() {
+            const completed = Object.values(testResults).filter(r => r !== null).length;
+            const total = Object.keys(testResults).length;
+            const percentage = (completed / total) * 100;
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${completed}/${total} tests completed`;
+        }
+
+        // Update status overview
+        function updateStatusOverview() {
+            const results = Object.values(testResults);
+            const passed = results.filter(r => r === true).length;
+            const failed = results.filter(r => r === false).length;
+            const pending = results.filter(r => r === null).length;
+
+            let statusHtml = '';
+            if (pending === results.length) {
+                statusHtml = '<p><span class="status-indicator status-unknown"></span> Belum ada test yang dijalankan</p>';
+            } else {
+                statusHtml = `
+                    <p><span class="status-indicator status-online"></span> ${passed} tests passed</p>
+                    <p><span class="status-indicator status-offline"></span> ${failed} tests failed</p>
+                    <p><span class="status-indicator status-unknown"></span> ${pending} tests pending</p>
+                `;
+            }
+            
+            document.getElementById('statusOverview').innerHTML = statusHtml;
+        }
+
+        // Test functions
+        async function testServerConnection() {
+            const resultDiv = document.getElementById('serverResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing server connection...';
+
+            try {
+                const response = await axios.get(CONFIG.baseUrl, { timeout: CONFIG.timeout });
+                testResults.server = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Server is running!\nStatus: ${response.status}\nResponse time: ${Date.now() - startTime}ms`;
+            } catch (error) {
+                testResults.server = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Server connection failed!\nError: ${error.message}\n\nSolution: Start XAMPP/WAMP or run: php -S localhost:8080`;
+            }
+            
+            updateProgress();
+            updateStatusOverview();
+            updateSolutions();
+        }
+
+        async function testAPIEndpoint() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing API endpoint...';
+
+            try {
+                const url = CONFIG.baseUrl + CONFIG.endpoints.artikel;
+                const response = await axios.get(url, { timeout: CONFIG.timeout });
+                testResults.api = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ API endpoint is accessible!\nURL: ${url}\nStatus: ${response.status}\nData: ${JSON.stringify(response.data, null, 2)}`;
+            } catch (error) {
+                testResults.api = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ API endpoint failed!\nURL: ${CONFIG.baseUrl + CONFIG.endpoints.artikel}\nError: ${error.message}\n\nSolution: Check CodeIgniter routes and controller`;
+            }
+            
+            updateProgress();
+            updateStatusOverview();
+            updateSolutions();
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing CORS configuration...';
+
+            try {
+                const url = CONFIG.baseUrl + CONFIG.endpoints.artikel;
+                const response = await axios.options(url, { timeout: CONFIG.timeout });
+                testResults.cors = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ CORS is configured correctly!\nAccess-Control headers are present`;
+            } catch (error) {
+                testResults.cors = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ CORS configuration failed!\nError: ${error.message}\n\nSolution: Add CORS headers to your API controller`;
+            }
+            
+            updateProgress();
+            updateStatusOverview();
+            updateSolutions();
+        }
+
+        async function testPOSTData() {
+            const resultDiv = document.getElementById('postResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing POST data...';
+
+            const testData = {
+                judul: 'Test Artikel Debug',
+                isi: 'Ini adalah test artikel dari debug tool',
+                status: 1
+            };
+
+            try {
+                const url = CONFIG.baseUrl + CONFIG.endpoints.artikel;
+                const response = await axios.post(url, testData, { 
+                    timeout: CONFIG.timeout,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                testResults.post = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ POST data successful!\nResponse: ${JSON.stringify(response.data, null, 2)}`;
+            } catch (error) {
+                testResults.post = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ POST data failed!\nError: ${error.message}\nData sent: ${JSON.stringify(testData, null, 2)}\n\nSolution: Check API controller POST method`;
+            }
+            
+            updateProgress();
+            updateStatusOverview();
+            updateSolutions();
+        }
+
+        async function testSimpleAPI() {
+            const resultDiv = document.getElementById('simpleApiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing simple API...';
+
+            try {
+                const url = CONFIG.baseUrl + CONFIG.endpoints.simple;
+                const response = await axios.get(url, { timeout: CONFIG.timeout });
+                testResults.simple = true;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Simple API is working!\nURL: ${url}\nResponse: ${JSON.stringify(response.data, null, 2)}`;
+            } catch (error) {
+                testResults.simple = false;
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Simple API failed!\nURL: ${CONFIG.baseUrl + CONFIG.endpoints.simple}\nError: ${error.message}\n\nSolution: Copy test-api-simple.php to htdocs folder`;
+            }
+            
+            updateProgress();
+            updateStatusOverview();
+            updateSolutions();
+        }
+
+        function updateSolutions() {
+            const solutionsDiv = document.getElementById('solutions');
+            let solutions = [];
+
+            if (testResults.server === false) {
+                solutions.push('🔧 Start XAMPP/WAMP atau jalankan: php -S localhost:8080');
+            }
+            
+            if (testResults.api === false) {
+                solutions.push('🔧 Copy ArtikelApi.php ke app/Controllers/Admin/ dan tambah routes');
+            }
+            
+            if (testResults.cors === false) {
+                solutions.push('🔧 Tambah CORS headers di controller atau gunakan API sederhana');
+            }
+            
+            if (testResults.post === false) {
+                solutions.push('🔧 Periksa method POST di controller atau gunakan API sederhana');
+            }
+            
+            if (testResults.simple === false) {
+                solutions.push('🔧 Copy test-api-simple.php ke folder htdocs');
+            }
+
+            if (solutions.length === 0) {
+                solutionsDiv.innerHTML = '<p class="success">✅ Semua test berhasil! Aplikasi siap digunakan.</p>';
+            } else {
+                solutionsDiv.innerHTML = '<ul>' + solutions.map(s => `<li>${s}</li>`).join('') + '</ul>';
+            }
+        }
+
+        async function runAllTests() {
+            await testServerConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAPIEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testPOSTData();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testSimpleAPI();
+        }
+
+        function clearResults() {
+            testResults = { server: null, api: null, cors: null, post: null, simple: null };
+            document.querySelectorAll('.result').forEach(div => div.style.display = 'none');
+            updateProgress();
+            updateStatusOverview();
+            document.getElementById('solutions').innerHTML = '<p>Jalankan test untuk mendapatkan rekomendasi solusi...</p>';
+        }
+
+        function openVueApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function openSimpleTest() {
+            window.open('test-simple.html', '_blank');
+        }
+
+        // Initialize
+        displayConfig();
+        updateProgress();
+        updateStatusOverview();
+    </script>
+</body>
+</html>
